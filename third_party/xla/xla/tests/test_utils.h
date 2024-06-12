@@ -21,12 +21,14 @@ limitations under the License.
 #include <random>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 #include "xla/hlo/ir/hlo_instructions.h"
 #include "xla/hlo/ir/hlo_module.h"
 #include "xla/layout_util.h"
 #include "xla/literal.h"
 #include "xla/xla_data.pb.h"
+#include "tsl/platform/protobuf.h"
 
 namespace xla {
 
@@ -121,6 +123,19 @@ std::unique_ptr<HloDotInstruction> CreateCanonicalDot(const Shape& shape,
 
 // Checks whether MLIR lowering is enabled through XLA_FLAGS.
 bool IsMlirLoweringEnabled();
+
+template <typename MessageType>
+absl::StatusOr<MessageType> ParseTextProto(const std::string& text_proto) {
+  tsl::protobuf::TextFormat::Parser parser;
+  MessageType parsed_proto;
+  tsl::protobuf::io::ArrayInputStream input_stream(text_proto.data(),
+                                                   text_proto.size());
+  if (!parser.Parse(&input_stream, &parsed_proto)) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Could not parse text proto: ", text_proto));
+  }
+  return parsed_proto;
+}
 
 }  // namespace xla
 
